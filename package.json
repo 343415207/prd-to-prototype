@@ -1,8 +1,8 @@
 {
   "name": "prd-to-prototype",
   "displayName": "PRD to Prototype",
-  "version": "1.0.0",
-  "description": "需求转原型 - Cursor/VS Code skill to generate interactive prototypes from PRD (single HTML, React + Ant Design)",
+  "version": "1.1.0",
+  "description": "需求转原型 - Cursor/VS Code skill，支持 PC 后台与 H5 移动端原型 (single HTML, React + Ant Design / antd-mobile)",
   "publisher": "your-publisher-id",
   "license": "MIT",
   "engines": {
