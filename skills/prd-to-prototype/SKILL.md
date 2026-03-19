@@ -47,16 +47,19 @@ description: Generates interactive prototypes as single HTML files. Use when the
 
 - **形式**：单 HTML 文件，双击打开
 - **构建**：无。**PC 与 H5 均必选 Agentation**，统一使用 ESM + import map + htm（不再用 Babel + UMD）
-- **PC**：Ant Design 4 + Agentation | **H5**：antd-mobile 5 + Agentation
+- **PC**：Ant Design 4（esm.sh）+ Agentation | **H5**：antd-mobile 5（UMD）+ Agentation
 
 ## CDN 引用
 
-**PC**：antd.css + import map（react、antd、agentation 等）| **H5**：antd-mobile ESM + import map + agentation，`viewport` 加 `maximum-scale=1, viewport-fit=cover`
+**PC**：antd.css + import map（react、antd、agentation 等）
+
+**H5**：antd-mobile 必须用 **UMD**，不能用 esm.sh（esm.sh 会加载各组件 CSS 导致大量 404）。用 `antd-mobile.min.css` + `antd-mobile UMD`，通过动态脚本在 React 挂到 window 后加载。`viewport` 加 `maximum-scale=1, viewport-fit=cover`
 
 ```html
 <!-- H5 viewport -->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<!-- H5 也需 ESM + import map + Agentation，与 PC 一致，antd-mobile 用 esm.sh 引入 -->
+<!-- H5: antd-mobile 用 UMD，不能用 esm.sh -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd-mobile@5.34.0/dist/antd-mobile.min.css" />
 ```
 
 ## 转化步骤
@@ -146,46 +149,93 @@ ReactDOM.createRoot(document.getElementById('root')).render(html`
 
 | 项 | 说明 |
 |----|------|
-| **antd/antd-mobile external** | 必须加 `?external=react,react-dom`，否则多 React 实例会导致 `useContext` 返回 null |
-| **external 参数** | 仅用 `react,react-dom`，不要加 `react/jsx-runtime`（会 404） |
+| **antd external** | PC 用 antd 时加 `?external=react,react-dom`，否则多 React 实例会导致 `useContext` 返回 null |
+| **H5 antd-mobile** | 必须用 UMD（jsdelivr），不能用 esm.sh，否则各组件 CSS 404 |
+| **external 参数** | esm.sh 包 URL 的 `?external=` 仅用 `react,react-dom`（加 react/jsx-runtime 会 404） |
+| **import map 必含 react/jsx-runtime** | Agentation 依赖此模块，PC 与 H5 的 import map 都必须有 `"react/jsx-runtime": "https://esm.sh/react@18/jsx-runtime"`，否则报 "Failed to resolve module specifier" |
 | **htm** | 无构建的 JSX 替代，用 `html\`<${Component}>...\` 写法 |
+| **style 必须为对象** | React 的 style 只能是对象，不能是字符串。htm 中写 `style=${{ padding: 16 }}`，禁止 `style="..."` 或 `style=${"padding:16px"}`，否则报 Minified React error #62 |
 | **根节点** | 同时渲染 App 与 Agentation，二者在同一 React 树 |
-| **PC/H5 统一** | 无论 H5 还是管理后台，都必须集成 Agentation，统一用 ESM + htm，不能用 Babel + UMD |
+| **PC/H5 统一** | 都必须集成 Agentation、htm；PC 全 ESM，H5 仅 antd-mobile 用 UMD（避免 esm.sh CSS 404） |
 
 ### 生成约束（禁止违反）
 
 | 禁止项 | 正确做法 |
 |--------|----------|
 | 使用 `React.createElement` | 必须用 htm：`const html = htm.bind(React.createElement)`，组件写成 `html\`<${Comp}>...\`` |
+| style 传字符串 | style 必须传对象：`style=${{ padding: 16, marginTop: 8 }}`，禁止 `style="padding:16px"`（会报 React error #62） |
 | 根节点只渲染 `<App />` | 必须同时渲染 App 与 Agentation：`html\`<${React.Fragment}><${App} /><${Agentation} /><//>\`` |
 | 漏掉 Agentation | import map 必有 agentation，script 必 `import { Agentation } from 'agentation'`，根节点必含 `<${Agentation} />` |
 | 漏掉 process polyfill | 在 import map 之前必须有 `window.process = { env: { NODE_ENV: 'production' } }` |
 | 漏掉 htm | import map 必有 htm，script 必 `import htm from 'htm'` 且 `const html = htm.bind(React.createElement)` |
-| H5 用 antd | H5 用 antd-mobile，PC 用 antd，不可混用 |
+| H5 用 antd | H5 用 antd-mobile（UMD），PC 用 antd（esm.sh），不可混用 |
+| H5 用 esm.sh 引入 antd-mobile | H5 必须用 UMD 脚本加载 antd-mobile，从 window.antdMobile 解构 |
+| 漏掉 react/jsx-runtime | import map 必须有 `"react/jsx-runtime": "https://esm.sh/react@18/jsx-runtime"`（Agentation 依赖） |
 
 ### 生成后自检清单
 
 生成原型后必须逐项核对：
 
-- [ ] import map 包含：react、react-dom、htm、agentation、antd 或 antd-mobile（带 `?external=react,react-dom`）
+- [ ] import map：PC 含 antd；H5 不含 antd-mobile，用 UMD 加载。**两者都必须含 react、react-dom、react/jsx-runtime、htm、agentation**（缺 react/jsx-runtime 会报 Failed to resolve）
 - [ ] 有 `window.process` polyfill
 - [ ] 使用 htm 写组件，未使用 `React.createElement`
 - [ ] 根节点 `render` 同时包含 `<${App} />` 与 `<${Agentation} />`
+- [ ] 所有 `style` 均用对象：`style=${{ ... }}`，未用字符串
 
-### H5 import map 示例
+### H5 加载方式（antd-mobile 用 UMD，避免 esm.sh CSS 404）
 
-```json
+antd-mobile 从 esm.sh 引入会触发大量组件 CSS 404，**H5 必须用 UMD**：先挂 React 到 window，再动态加载 antd-mobile UMD。
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd-mobile@5.34.0/dist/antd-mobile.min.css" />
+<div id="root"></div>
+<script>window.process = { env: { NODE_ENV: 'production' } };</script>
+<script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@18",
     "react-dom": "https://esm.sh/react-dom@18",
-    "react-dom/client": "https://esm.sh/react-dom@18/client",
+    "react/jsx-runtime": "https://esm.sh/react@18/jsx-runtime",
     "htm": "https://esm.sh/htm@3",
-    "antd-mobile": "https://esm.sh/antd-mobile@5.34.0?external=react,react-dom",
     "agentation": "https://cdn.jsdelivr.net/npm/agentation@2.3.3/dist/index.mjs"
   }
 }
+</script>
+<script type="module">
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Agentation } from 'agentation';
+import htm from 'htm';
+const html = htm.bind(React.createElement);
+
+window.React = React;
+window.ReactDOM = ReactDOM;
+
+const s = document.createElement('script');
+s.src = 'https://cdn.jsdelivr.net/npm/antd-mobile@5.34.0/umd/antd-mobile.js';
+s.onload = () => {
+  const { TabBar, List, Button, Toast } = window.antdMobile;
+  function App() { return html`<div>...</div>`; }
+  ReactDOM.createRoot(document.getElementById('root')).render(html`
+    <${React.Fragment}>
+      <${App} />
+      <${Agentation} />
+    <//>
+  `);
+};
+document.body.appendChild(s);
+</script>
 ```
+
+**H5 import map 不包含 antd-mobile**，组件从 `window.antdMobile` 解构。
+
+### 常见错误与排查
+
+| 报错 | 原因 | 正确写法 |
+|------|------|----------|
+| Minified React error #62 | style 传了字符串 | `style=${{ padding: 16 }}`，不能用 `style="padding:16px"` |
+| Failed to resolve module specifier "react/jsx-runtime" | import map 缺 react/jsx-runtime | 在 import map 中加 `"react/jsx-runtime": "https://esm.sh/react@18/jsx-runtime"` |
+| useContext 返回 null | 多 React 实例 | PC antd 加 `?external=react,react-dom`；H5 确保先 `window.React=React` 再加载 antd-mobile UMD |
 
 ## 参考
 
