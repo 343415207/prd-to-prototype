@@ -46,12 +46,12 @@ description: Generates interactive prototypes as single HTML files. Use when the
 ## 技术方案
 
 - **形式**：单 HTML 文件，双击打开
-- **构建**：无，Babel Standalone 浏览器内编译 JSX
-- **PC**：Ant Design 4 | **H5**：antd-mobile 5
+- **构建**：无。**PC** 因必选 Agentation 使用 ESM + import map + htm；**H5** 可用 Babel Standalone 或 ESM
+- **PC**：Ant Design 4 + Agentation | **H5**：antd-mobile 5
 
 ## CDN 引用
 
-**PC**：antd + antd.css | **H5**：antd-mobile（无单独 CSS，UMD 内联），`viewport` 加 `maximum-scale=1, viewport-fit=cover`
+**PC**：antd.css + import map（react、antd、agentation 等）| **H5**：antd-mobile（UMD 或 ESM），`viewport` 加 `maximum-scale=1, viewport-fit=cover`
 
 ```html
 <!-- H5 viewport -->
@@ -101,7 +101,60 @@ const [page, setPage] = React.useState('list');
 - 告知用户：生成路径、双击打开、需联网、演示密码 `123456`
 - 若本次对话有多个项目，简要列出各原型路径以便用户区分
 
+## 精准反馈（必选）
+
+原型生成后，必须引入 [Agentation](https://github.com/benjitaylor/agentation)。Agentation 无 UMD，需用 **import map + type="module" + htm**：
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd@4.24.15/dist/antd.min.css" />
+<div id="root"></div>
+<script>window.process = { env: { NODE_ENV: 'production' } };</script>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18",
+    "react-dom": "https://esm.sh/react-dom@18",
+    "react/jsx-runtime": "https://esm.sh/react@18/jsx-runtime",
+    "htm": "https://esm.sh/htm@3",
+    "antd": "https://esm.sh/antd@4.24.15?external=react,react-dom",
+    "agentation": "https://cdn.jsdelivr.net/npm/agentation@2.3.3/dist/index.mjs"
+  }
+}
+</script>
+<script type="module">
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Layout, Menu, Form, Input, Button, Table, message } from 'antd';
+import { Agentation } from 'agentation';
+import htm from 'htm';
+const html = htm.bind(React.createElement);
+
+function App() {
+  const [page, setPage] = React.useState('list');
+  return html`<div>...</div>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`
+  <${React.Fragment}>
+    <${App} />
+    <${Agentation} />
+  <//>
+`);
+</script>
+```
+
+### 集成要点
+
+| 项 | 说明 |
+|----|------|
+| **antd external** | 必须加 `?external=react,react-dom`，否则多 React 实例会导致 `useContext` 返回 null |
+| **external 参数** | 仅用 `react,react-dom`，不要加 `react/jsx-runtime`（会 404） |
+| **htm** | 无构建的 JSX 替代，用 `html\`<${Component}>...\` 写法 |
+| **根节点** | 同时渲染 App 与 Agentation，二者在同一 React 树 |
+| **PC + Agentation** | 不能再用 Babel + UMD antd，需统一改为 ESM + htm |
+
 ## 参考
 
 - Ant Design（PC）：https://ant.design/
 - antd-mobile（H5）：https://mobile.ant.design/
+- Agentation（精准定位）：https://github.com/benjitaylor/agentation
