@@ -1,0 +1,27 @@
+{
+  "name": "prd-to-prototype",
+  "displayName": "PRD to Prototype",
+  "version": "1.0.0",
+  "description": "需求转原型 - Cursor/VS Code skill to generate interactive prototypes from PRD (single HTML, React + Ant Design)",
+  "publisher": "your-publisher-id",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["prd", "prototype", "原型", "需求", "product", "design", "cursor", "skill"],
+  "main": "./extension.js",
+  "activationEvents": ["onCommand:prd-to-prototype.installSkill"],
+  "contributes": {
+    "commands": [
+      {
+        "command": "prd-to-prototype.installSkill",
+        "title": "PRD to Prototype: Install Cursor Skill"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/343415207/prd-to-prototype"
+  }
+}
