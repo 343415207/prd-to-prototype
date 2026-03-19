@@ -146,11 +146,46 @@ ReactDOM.createRoot(document.getElementById('root')).render(html`
 
 | 项 | 说明 |
 |----|------|
-| **antd external** | 必须加 `?external=react,react-dom`，否则多 React 实例会导致 `useContext` 返回 null |
+| **antd/antd-mobile external** | 必须加 `?external=react,react-dom`，否则多 React 实例会导致 `useContext` 返回 null |
 | **external 参数** | 仅用 `react,react-dom`，不要加 `react/jsx-runtime`（会 404） |
 | **htm** | 无构建的 JSX 替代，用 `html\`<${Component}>...\` 写法 |
 | **根节点** | 同时渲染 App 与 Agentation，二者在同一 React 树 |
 | **PC/H5 统一** | 无论 H5 还是管理后台，都必须集成 Agentation，统一用 ESM + htm，不能用 Babel + UMD |
+
+### 生成约束（禁止违反）
+
+| 禁止项 | 正确做法 |
+|--------|----------|
+| 使用 `React.createElement` | 必须用 htm：`const html = htm.bind(React.createElement)`，组件写成 `html\`<${Comp}>...\`` |
+| 根节点只渲染 `<App />` | 必须同时渲染 App 与 Agentation：`html\`<${React.Fragment}><${App} /><${Agentation} /><//>\`` |
+| 漏掉 Agentation | import map 必有 agentation，script 必 `import { Agentation } from 'agentation'`，根节点必含 `<${Agentation} />` |
+| 漏掉 process polyfill | 在 import map 之前必须有 `window.process = { env: { NODE_ENV: 'production' } }` |
+| 漏掉 htm | import map 必有 htm，script 必 `import htm from 'htm'` 且 `const html = htm.bind(React.createElement)` |
+| H5 用 antd | H5 用 antd-mobile，PC 用 antd，不可混用 |
+
+### 生成后自检清单
+
+生成原型后必须逐项核对：
+
+- [ ] import map 包含：react、react-dom、htm、agentation、antd 或 antd-mobile（带 `?external=react,react-dom`）
+- [ ] 有 `window.process` polyfill
+- [ ] 使用 htm 写组件，未使用 `React.createElement`
+- [ ] 根节点 `render` 同时包含 `<${App} />` 与 `<${Agentation} />`
+
+### H5 import map 示例
+
+```json
+{
+  "imports": {
+    "react": "https://esm.sh/react@18",
+    "react-dom": "https://esm.sh/react-dom@18",
+    "react-dom/client": "https://esm.sh/react-dom@18/client",
+    "htm": "https://esm.sh/htm@3",
+    "antd-mobile": "https://esm.sh/antd-mobile@5.34.0?external=react,react-dom",
+    "agentation": "https://cdn.jsdelivr.net/npm/agentation@2.3.3/dist/index.mjs"
+  }
+}
+```
 
 ## 参考
 
