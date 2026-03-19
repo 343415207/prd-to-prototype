@@ -5,9 +5,9 @@
 ## 运行
 
 ```bash
-npm install
-npm run dev    # 开发
-npm run build  # 构建，产物 dist/index.html 可离线打开
+pnpm install
+pnpm dev    # 开发
+pnpm build  # 构建，产物 dist/index.html 可离线打开
 ```
 
 演示密码：123456

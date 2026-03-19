@@ -11,8 +11,8 @@ prd-to-prototype 技能的两个参考示例，可直接复制结构生成新原
 
 ```bash
 cd h5-clothing-mall   # 或 pc-operations-system
-npm install
-npm run build
+pnpm install
+pnpm build
 # 打开 dist/index.html
 ```
 

@@ -5,14 +5,9 @@ React + antd-mobile + Agentation 构建 single HTML，支持 `file://` 离线打
 ## 运行
 
 ```bash
-# 安装依赖
-npm install
-
-# 开发预览（需联网）
-npm run dev
-
-# 构建 single HTML（输出到 dist/index.html）
-npm run build
+pnpm install
+pnpm dev    # 开发预览（需联网）
+pnpm build  # 构建，输出 dist/index.html
 ```
 
 ## 验证
