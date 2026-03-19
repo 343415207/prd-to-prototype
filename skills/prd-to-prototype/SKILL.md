@@ -46,18 +46,17 @@ description: Generates interactive prototypes as single HTML files. Use when the
 ## 技术方案
 
 - **形式**：单 HTML 文件，双击打开
-- **构建**：无。**PC** 因必选 Agentation 使用 ESM + import map + htm；**H5** 可用 Babel Standalone 或 ESM
-- **PC**：Ant Design 4 + Agentation | **H5**：antd-mobile 5
+- **构建**：无。**PC 与 H5 均必选 Agentation**，统一使用 ESM + import map + htm（不再用 Babel + UMD）
+- **PC**：Ant Design 4 + Agentation | **H5**：antd-mobile 5 + Agentation
 
 ## CDN 引用
 
-**PC**：antd.css + import map（react、antd、agentation 等）| **H5**：antd-mobile（UMD 或 ESM），`viewport` 加 `maximum-scale=1, viewport-fit=cover`
+**PC**：antd.css + import map（react、antd、agentation 等）| **H5**：antd-mobile ESM + import map + agentation，`viewport` 加 `maximum-scale=1, viewport-fit=cover`
 
 ```html
 <!-- H5 viewport -->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<!-- H5: antd-mobile UMD → window.antdMobile -->
-<script src="https://unpkg.com/antd-mobile@5.42.0/umd/antd-mobile.js"></script>
+<!-- H5 也需 ESM + import map + Agentation，与 PC 一致，antd-mobile 用 esm.sh 引入 -->
 ```
 
 ## 转化步骤
@@ -103,7 +102,7 @@ const [page, setPage] = React.useState('list');
 
 ## 精准反馈（必选）
 
-原型生成后，必须引入 [Agentation](https://github.com/benjitaylor/agentation)。Agentation 无 UMD，需用 **import map + type="module" + htm**：
+**无论 H5 还是管理后台，所有原型都必须引入** [Agentation](https://github.com/benjitaylor/agentation)。Agentation 无 UMD，需用 **import map + type="module" + htm**：
 
 ```html
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd@4.24.15/dist/antd.min.css" />
@@ -151,7 +150,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(html`
 | **external 参数** | 仅用 `react,react-dom`，不要加 `react/jsx-runtime`（会 404） |
 | **htm** | 无构建的 JSX 替代，用 `html\`<${Component}>...\` 写法 |
 | **根节点** | 同时渲染 App 与 Agentation，二者在同一 React 树 |
-| **PC + Agentation** | 不能再用 Babel + UMD antd，需统一改为 ESM + htm |
+| **PC/H5 统一** | 无论 H5 还是管理后台，都必须集成 Agentation，统一用 ESM + htm，不能用 Babel + UMD |
 
 ## 参考
 
